@@ -24,6 +24,30 @@ function calculateMeter(exposure) {
   return Math.max(-3, Math.min(3, total));
 }
 
+const CameraFeed = ({ exposure }) => {
+  const meterVal = calculateMeter(exposure);
+  // Math.pow(2, meterVal) precisely curves EV values to CSS brightness (0 EV = 1, +1 EV = 2, -1 EV = 0.5)
+  // Limit max brightness to avoid sheer-whiteout breaking the browser rendering engine entirely
+  const brightnessFactor = Math.min(Math.pow(2, meterVal), 8);
+  
+  const getTempTint = (temp) => {
+     if (temp === 3200) return 'rgba(0, 100, 255, 0.25)'; // Tungsten WB on daylight scene = blue
+     if (temp === 4300) return 'rgba(0, 100, 255, 0.10)';
+     if (temp === 5600) return 'transparent'; // Target balanced scene in daylight
+     if (temp === 6500) return 'rgba(255, 150, 0, 0.15)'; // Shade WB on daylight scene = warm
+     return 'transparent';
+  };
+
+  return (
+    <div className="live-camera-feed" style={{
+      backgroundImage: `url('https://images.unsplash.com/photo-1598218161556-9a250320a061?auto=format&fit=crop&q=80&w=2000&ixlib=rb-4.0.3')`,
+      filter: `brightness(${brightnessFactor})`
+    }}>
+      <div className="wb-tint" style={{ backgroundColor: getTempTint(exposure.temp) }}></div>
+    </div>
+  );
+};
+
 const Histogram = ({ meterValue }) => {
   const shift = meterValue * 25; 
   
@@ -276,6 +300,13 @@ function App() {
 
   return (
     <div className="simulator-container">
+      {/* Live Video Feed Background */}
+      {activeCamera !== null ? (
+        <CameraFeed exposure={exposure} />
+      ) : (
+        <div className="live-camera-feed default-feed"></div>
+      )}
+
       {/* OSD Overlay */}
       {activeCamera && (
         <OSDOverlay 
