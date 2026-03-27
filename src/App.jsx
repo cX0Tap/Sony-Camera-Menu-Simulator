@@ -24,23 +24,22 @@ function calculateMeter(exposure) {
   return Math.max(-3, Math.min(3, total));
 }
 
-const CameraFeed = ({ exposure }) => {
+const CameraFeed = ({ exposure, showPhoto }) => {
   const meterVal = calculateMeter(exposure);
-  // Math.pow(2, meterVal) precisely curves EV values to CSS brightness (0 EV = 1, +1 EV = 2, -1 EV = 0.5)
-  // Limit max brightness to avoid sheer-whiteout breaking the browser rendering engine entirely
   const brightnessFactor = Math.min(Math.pow(2, meterVal), 8);
   
   const getTempTint = (temp) => {
-     if (temp === 3200) return 'rgba(0, 100, 255, 0.25)'; // Tungsten WB on daylight scene = blue
+     if (temp === 3200) return 'rgba(0, 100, 255, 0.25)'; 
      if (temp === 4300) return 'rgba(0, 100, 255, 0.10)';
-     if (temp === 5600) return 'transparent'; // Target balanced scene in daylight
-     if (temp === 6500) return 'rgba(255, 150, 0, 0.15)'; // Shade WB on daylight scene = warm
+     if (temp === 5600) return 'transparent'; 
+     if (temp === 6500) return 'rgba(255, 150, 0, 0.15)'; 
      return 'transparent';
   };
 
   return (
     <div className="live-camera-feed" style={{
-      backgroundImage: `url('https://images.unsplash.com/photo-1598218161556-9a250320a061?auto=format&fit=crop&q=80&w=2000&ixlib=rb-4.0.3')`,
+      backgroundColor: '#111',
+      backgroundImage: showPhoto ? `url('https://images.unsplash.com/photo-1590422749909-1baee86326e0?q=80&w=2000&auto=format&fit=crop')` : 'none',
       filter: `brightness(${brightnessFactor})`
     }}>
       <div className="wb-tint" style={{ backgroundColor: getTempTint(exposure.temp) }}></div>
@@ -202,6 +201,7 @@ const OSDOverlay = ({ activeCamera, exposure, activeOSDIndex, globalValues }) =>
 function App() {
   const [activeCamera, setActiveCamera] = useState(null); 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(true);
   
   const [exposure, setExposure] = useState({
     iso: 800,
@@ -233,6 +233,10 @@ function App() {
   }, [exposure]);
 
   const handleGlobalKey = useCallback((e) => {
+    if (e.key === 'o' || e.key === 'O') {
+      setShowPhoto(prev => !prev);
+    }
+
     if ((e.key === 'm' || e.key === 'M') && activeCamera) {
       setMenuOpen(prev => !prev);
       return;
@@ -302,7 +306,7 @@ function App() {
     <div className="simulator-container">
       {/* Live Video Feed Background */}
       {activeCamera !== null ? (
-        <CameraFeed exposure={exposure} />
+        <CameraFeed exposure={exposure} showPhoto={showPhoto} />
       ) : (
         <div className="live-camera-feed default-feed"></div>
       )}
@@ -356,7 +360,7 @@ function App() {
         ) : menuOpen ? (
           <>Menu: <kbd>M</kbd> &nbsp;|&nbsp; Navigate: <kbd>Arrows</kbd> &nbsp;|&nbsp; Select: <kbd>Enter / Right</kbd> &nbsp;|&nbsp; Back: <kbd>Esc / Left</kbd></>
         ) : (
-          <>OSD Edit: <kbd>Arrows</kbd> &nbsp;|&nbsp; Open Menu: <kbd>M</kbd> &nbsp;|&nbsp; Return: <kbd>Refresh</kbd></>
+          <>Edit: <kbd>Arrows</kbd> &nbsp;|&nbsp; Menu: <kbd>M</kbd> &nbsp;|&nbsp; Photo: <kbd>O</kbd> &nbsp;|&nbsp; Return: <kbd>Refresh</kbd></>
         )}
       </div>
 
