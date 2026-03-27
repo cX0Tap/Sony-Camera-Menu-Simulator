@@ -1,0 +1,175 @@
+:root {
+  --bg-color: #0d0d0d;
+  --menu-bg: #141414;
+  --col1-bg: #222222;
+  --col2-bg: #1a1a1a;
+  --col3-bg: #0d0d0d;
+  --text-primary: #ededed;
+  --text-muted: #888888;
+  
+  --fx3-accent: #fca311;
+  --fx3-focus-bg: rgba(252, 163, 17, 0.2);
+  --fx9-accent: rgb(210, 150, 20);
+  --fx9-focus-bg: rgba(210, 150, 20, 0.2);
+  --fx9-sidebar: rgba(30, 30, 30, 0.9);
+  --border-color: #333333;
+  --header-bg: #111111;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #000; color: var(--text-primary);
+  height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden;
+}
+
+.simulator-container {
+  width: 100vw; height: 100vh; position: relative;
+  background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1598218161556-9a250320a061?auto=format&fit=crop&q=80&w=2000&ixlib=rb-4.0.3');
+  background-size: cover; background-position: center;
+  display: flex; justify-content: center; align-items: center;
+}
+
+.camera-selector {
+  position: absolute; z-index: 500; background: rgba(10, 10, 10, 0.9);
+  padding: 40px; border-radius: 12px; border: 1px solid #333;
+  text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+}
+.camera-selector h2 { margin-bottom: 20px; font-weight: 400; letter-spacing: 2px; }
+.camera-options { display: flex; gap: 20px; justify-content: center; }
+.cam-btn {
+  background: #222; border: 2px solid #444; color: #fff;
+  padding: 15px 30px; font-size: 1.2rem; border-radius: 8px;
+  cursor: pointer; transition: all 0.2s;
+}
+.cam-btn:hover, .cam-btn:focus { border-color: var(--fx3-accent); background: #333; outline: none; }
+
+/* OSD Overlay and Editor Elements */
+.osd-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 10; padding: 20px 40px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  font-weight: bold; font-size: 1.2rem; text-shadow: 1px 1px 2px #000, 0 0 4px #000; color: white;
+}
+.osd-top, .osd-bottom { display: flex; justify-content: space-between; width: 100%; }
+.osd-item { display: flex; align-items: flex-end; gap: 20px; }
+
+.rec-indicator { color: #ff3b30; font-weight: 800; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Light Meter */
+.meter-container {
+  display: flex; justify-content: center; align-items: center; pointer-events: none;
+  margin-top: auto; margin-bottom: 15px; width: 100%;
+}
+.light-meter { display: flex; flex-direction: column; align-items: center; }
+.meter-scale {
+  display: flex; align-items: flex-end; position: relative; font-size: 0.8rem; color: #aaa;
+  padding-bottom: 6px; border-bottom: 3px solid rgba(255,255,255,0.4); width: 280px; justify-content: space-between;
+}
+.tick { width: 2px; height: 6px; background: rgba(255,255,255,0.4); }
+.meter-needle {
+  position: absolute; bottom: -3px; left: 50%; width: 4px; height: 16px;
+  background: var(--fx3-accent); transition: transform 0.15s ease-out; box-shadow: 0 0 5px #000;
+}
+.fx9-osd .meter-needle { background: var(--fx9-accent); }
+.meter-value { margin-top: 5px; font-weight: bold; font-size: 1rem; color: #add8e6; }
+
+/* Histogram */
+.histogram-container {
+  position: absolute; bottom: 80px; right: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4); z-index: 5;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+/* OSD Editable groups */
+.osd-val {
+  padding: 4px 8px; border-radius: 4px; transition: outline 0.1s, background 0.1s;
+}
+.osd-active {
+  background: rgba(255, 255, 255, 0.2); outline: 3px solid var(--fx3-accent); outline-offset: -3px;
+}
+.fx9-osd .osd-active { outline-color: var(--fx9-accent); }
+
+
+/* Shared Menu Structural CSS */
+.menu-container {
+  width: 90%; max-width: 1000px; height: 75%;
+  background: var(--menu-bg); border: 1px solid var(--border-color);
+  border-radius: 4px; display: flex; flex-direction: column;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.7); backdrop-filter: blur(10px);
+  z-index: 20; position: relative; overflow: hidden;
+}
+.menu-header {
+  height: 45px; background: var(--header-bg); display: flex; align-items: center;
+  padding: 0 20px; font-size: 1.2rem; font-weight: 600; border-bottom: 2px solid #555; pointer-events: auto;
+}
+.menu-body { display: flex; flex: 1; overflow: hidden; position: relative; pointer-events: auto; }
+
+/* FX3 3-Column */
+.menu-col-1 {
+  width: 80px; background: var(--col1-bg); border-right: 1px solid var(--border-color);
+  display: flex; flex-direction: column; align-items: center; padding-top: 10px;
+}
+.tab-item {
+  width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; font-size: 1.8rem;
+  margin-bottom: 5px; border-radius: 6px; color: var(--text-muted); padding-bottom: 5px;
+}
+.tab-item.active { background: rgba(255,255,255,0.1); }
+.col1-active-indicator { outline: 3px solid var(--fx3-accent); }
+
+.menu-col-2 {
+  width: 280px; background: var(--col2-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: auto;
+}
+.subcat-item {
+  padding: 18px 20px; font-size: 1.1rem; border-bottom: 1px solid #222; display: flex; justify-content: space-between; color: var(--text-muted);
+}
+.subcat-item.active { color: var(--text-primary); background: rgba(255,255,255,0.05); border-left: 4px solid currentColor; }
+.col2-active-indicator { outline: 3px solid var(--fx3-accent); outline-offset: -3px; background: var(--fx3-focus-bg) !important; }
+
+/* FX9 Sidebar */
+.fx9-sidebar {
+  width: 220px; background: var(--fx9-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: auto;
+}
+.fx9-cat-item { padding: 15px 20px; font-size: 1.1rem; color: var(--text-muted); border-bottom: 1px solid #222; }
+.fx9-cat-item.active { color: var(--text-primary); background: var(--fx9-focus-bg); border-left: 4px solid var(--fx9-accent); }
+.fx9-cat-active-indicator { outline: 2px solid var(--fx9-accent); outline-offset: -2px; }
+
+/* Shared Content Columns */
+.menu-col-3 { flex: 1; background: var(--col3-bg); display: flex; flex-direction: column; overflow-y: auto; position: relative; padding: 10px 0; }
+.setting-item { padding: 15px 30px; display: flex; justify-content: space-between; border-bottom: 1px solid #1a1a1a; }
+.setting-item.selected { outline: 3px solid var(--fx3-accent); outline-offset: -3px; background: var(--fx3-focus-bg); }
+.fx9-mode .setting-item.selected { outline-color: var(--fx9-accent); background: var(--fx9-focus-bg); }
+.setting-name { font-size: 1.15rem; }
+.setting-value { font-size: 1.1rem; color: #add8e6; }
+.setting-item.selected .setting-value { color: #fff; }
+
+.dropdown-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+}
+.dropdown-container {
+  width: 70%; max-width: 500px; max-height: 80%; background: #111; border: 1px solid #444; border-radius: 6px;
+  display: flex; flex-direction: column; overflow: hidden; animation: scaleUp 0.15s ease-out;
+}
+.dropdown-header { padding: 15px 20px; background: #222; border-bottom: 2px solid var(--fx3-accent); font-weight: bold; text-align: center; }
+.fx9-mode .dropdown-header { border-color: var(--fx9-accent); }
+.dropdown-list { flex: 1; overflow-y: auto; }
+.dropdown-item { padding: 15px 30px; border-bottom: 1px solid #1a1a1a; }
+.dropdown-item.active { background: var(--fx3-accent); font-weight: bold; }
+.fx9-mode .dropdown-item.active { background: var(--fx9-accent); }
+
+.editor-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.editor-box { background: #111; border: 2px solid var(--fx3-accent); border-radius: 6px; padding: 30px; text-align: center; }
+.fx9-mode .editor-box { border-color: var(--fx9-accent); }
+.editor-title { font-size: 1.2rem; color: #ccc; margin-bottom: 10px; }
+.editor-value { font-size: 2.5rem; font-weight: bold; }
+
+.submenu-path { padding: 12px 25px; background: #222; font-size: 0.95rem; color: #aaa; border-bottom: 1px solid #333; }
+.instructions { position: absolute; bottom: 20px; text-align: center; width: 100%; color: rgba(255,255,255,0.6); font-size: 0.95rem; z-index: 5; }
+kbd { background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 4px; font-family: monospace; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
