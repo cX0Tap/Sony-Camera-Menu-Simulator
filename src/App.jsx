@@ -6,33 +6,27 @@ import './index.css';
 // Exposure Options
 const isoSteps = [160, 200, 400, 800, 1600, 3200, 6400, 12800, 25600];
 const fstopSteps = [1.4, 2.0, 2.8, 4.0, 5.6, 8.0, 11, 16, 22];
-const ndStepsFX3 = [0]; // FX3 has no internal ND 
-const ndStepsFX9 = [0, 2, 4, 6]; // Clear, 1/4 (2 stops), 1/16 (4 stops), 1/64 (6 stops)
+const ndStepsFX3 = [0]; 
+const ndStepsFX9 = [0, 2, 4, 6]; 
 const tempSteps = [3200, 4300, 5600, 6500];
 
 function calculateMeter(exposure) {
-  // Base scenario for 0 EV meter: ISO 800, F4.0, ND 0
   const baselogIso = Math.log2(800);
   const logIso = Math.log2(exposure.iso);
   const isoDiff = logIso - baselogIso;
 
   const baseAperture = 4.0;
-  // EV difference for aperture is 2 * log2(base/current)
   const apDiff = 2 * Math.log2(baseAperture / exposure.aperture);
 
-  const ndDiff = -exposure.nd; // ND 2 is -2 stops
+  const ndDiff = -exposure.nd; 
   
   const total = isoDiff + apDiff + ndDiff;
-  return Math.max(-3, Math.min(3, total)); // Clamp between -3 and +3
+  return Math.max(-3, Math.min(3, total));
 }
 
 const Histogram = ({ meterValue }) => {
-  // Meter is bounded from -3 to +3
-  // Translate this into an X offset shift
   const shift = meterValue * 25; 
   
-  // A realistic looking multi-peak distribution curve 
-  // By shifting its X coordinates, we simulate shadow/highlight clipping
   const pathData = `
     M -100 60 
     C -60 60, -40 20, ${10 + shift} 30 
@@ -45,13 +39,8 @@ const Histogram = ({ meterValue }) => {
   return (
     <div className="histogram-container">
       <svg width="120" height="60" viewBox="0 0 120 60">
-        {/* Background box */}
         <rect width="120" height="60" fill="rgba(0,0,0,0.4)" />
-        
-        {/* Histogram Curve */}
         <path d={pathData} fill="rgba(255, 255, 255, 0.8)" />
-        
-        {/* Vertical Grid lines dividing zones */}
         <line x1="30" y1="0" x2="30" y2="60" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
         <line x1="60" y1="0" x2="60" y2="60" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
         <line x1="90" y1="0" x2="90" y2="60" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
@@ -61,8 +50,7 @@ const Histogram = ({ meterValue }) => {
 };
 
 const LightMeter = ({ meterValue }) => {
-  // visual meter from -2 to +2
-  const maxPixels = 60; // Max offset from center
+  const maxPixels = 60; 
   const offset = (meterValue / 2) * maxPixels; 
   const displayVal = meterValue > 0 ? `+${meterValue.toFixed(1)}` : meterValue.toFixed(1);
 
@@ -89,7 +77,51 @@ const LightMeter = ({ meterValue }) => {
   );
 };
 
-const OSDOverlay = ({ activeCamera, exposure, activeOSDIndex }) => {
+// MARKER RENDERING LOGIC
+const MarkerOverlay = ({ values, activeCamera }) => {
+  let isMasterOn = false;
+  if (activeCamera === 'FX3') {
+    isMasterOn = values['Marker Display'] === 'On';
+  } else {
+    // FX9 relies strictly on the individual toggle values if Master doesn't exist, we fallback to true
+    isMasterOn = true; 
+  }
+  
+  if (!isMasterOn) return null;
+
+  return (
+    <div className="marker-overlay">
+      {/* 1. Guideframe (Rule of Thirds Grid) */}
+      {values['Guideframe'] === 'On' && (
+        <>
+          <div className="marker-guide v-left"></div>
+          <div className="marker-guide v-right"></div>
+          <div className="marker-guide h-top"></div>
+          <div className="marker-guide h-bottom"></div>
+        </>
+      )}
+
+      {/* 2. Safety Zone */}
+      {values['Safety Zone'] === '80%' && <div className="marker-safety s-80"></div>}
+      {values['Safety Zone'] === '90%' && <div className="marker-safety s-90"></div>}
+
+      {/* 3. Aspect Marker */}
+      {(values['Aspect Marker'] && values['Aspect Marker'] !== 'Off') && (
+        <div className={`marker-aspect a-${values['Aspect Marker'].replace(':', '').replace('.', '')}`}></div>
+      )}
+
+      {/* 4. Center Marker */}
+      {values['Center Marker'] === 'On' && (
+        <div className="marker-center">
+          <div className="mc-horiz"></div>
+          <div className="mc-vert"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const OSDOverlay = ({ activeCamera, exposure, activeOSDIndex, globalValues }) => {
   const formatND = (stops) => {
     if (stops === 0) return 'Clear';
     if (stops === 2) return '1/4';
@@ -100,15 +132,16 @@ const OSDOverlay = ({ activeCamera, exposure, activeOSDIndex }) => {
 
   const meterVal = calculateMeter(exposure);
 
-  // activeOSDIndex: 0 = Aperture, 1 = ND, 2 = ISO, 3 = Temp
   return (
     <div className={`osd-overlay ${activeCamera === 'FX9' ? 'fx9-osd' : 'fx3-osd'}`}>
+      <MarkerOverlay values={globalValues} activeCamera={activeCamera} />
+
       <div className="osd-top">
         <div className="osd-item">
           <span className="rec-indicator" style={{color: activeCamera === 'FX9' ? '#0f0' : '#f00'}}>
              {activeCamera === 'FX9' ? '•REC' : '•STBY'}
           </span>
-          <span>00:00:00:00</span>
+          <span>{globalValues['Time Code Format'] === 'NDF' ? '00:00:00:00' : '00:00:00;00'}</span>
           <span style={{color: '#aaa', fontSize: '0.8rem'}}>TC</span>
         </div>
         <div className="osd-item">
@@ -116,7 +149,6 @@ const OSDOverlay = ({ activeCamera, exposure, activeOSDIndex }) => {
         </div>
       </div>
       
-      {/* Light meter in the center bottom */}
       <div className="meter-container">
         <LightMeter meterValue={meterVal} />
       </div>
@@ -126,7 +158,7 @@ const OSDOverlay = ({ activeCamera, exposure, activeOSDIndex }) => {
       <div className="osd-bottom">
         <div className="osd-item">
           <span>{activeCamera === 'FX9' ? 'S-Log3' : 'S-Cinetone'}</span>
-          <span>4K 24p</span>
+          <span>4K {globalValues['Rec Frame Rate'] || '24p'}</span>
         </div>
         <div className="osd-item osd-editable-group">
           <span className={`osd-val ${activeOSDIndex === 0 ? 'osd-active' : ''}`}>F{exposure.aperture.toFixed(1)}</span>
@@ -144,10 +176,9 @@ const OSDOverlay = ({ activeCamera, exposure, activeOSDIndex }) => {
 };
 
 function App() {
-  const [activeCamera, setActiveCamera] = useState(null); // 'FX3' | 'FX9' | null
+  const [activeCamera, setActiveCamera] = useState(null); 
   const [menuOpen, setMenuOpen] = useState(false);
   
-  // Shared Exposure State
   const [exposure, setExposure] = useState({
     iso: 800,
     aperture: 4.0,
@@ -155,19 +186,25 @@ function App() {
     temp: 5600
   });
 
-  // 0: Aperture, 1: ND, 2: ISO, 3: Temp
   const [activeOSDIndex, setActiveOSDIndex] = useState(0);
 
-  // Global Menu values (to pass into FX components)
-  const [globalValues, setGlobalValues] = useState({});
+  // Global Menu values (used by both Menu logic and OSD Overlay markers)
+  const [globalValues, setGlobalValues] = useState({
+    'Marker Display': 'On',
+    'Center Marker': 'On',
+    'Aspect Marker': '2.35:1',
+    'Safety Zone': 'Off',
+    'Guideframe': 'On',
+    'Rec Frame Rate': '24p',
+    'Time Code Format': 'DF'
+  });
 
+  // Sync exposure state to global menu values so the menu sees it!
   useEffect(() => {
-    // Sync exposure state to global menu values so the menu sees it!
     setGlobalValues(prev => ({
       ...prev,
       'ISO': typeof exposure.iso === 'string' ? exposure.iso : exposure.iso.toString(),
-      'White Balance': typeof exposure.temp === 'string' ? exposure.temp : exposure.temp.toString(),
-      // Adding explicit keys the menu might target
+      'White Balance': typeof exposure.temp === 'string' ? exposure.temp : exposure.temp.toString()
     }));
   }, [exposure]);
 
@@ -182,30 +219,29 @@ function App() {
         e.preventDefault();
       }
 
-      // Max index is 3. If FX3, skip ND (index 1)
       const maxIdx = 3;
       
       if (e.key === 'ArrowLeft') {
         let next = activeOSDIndex - 1;
-        if (activeCamera === 'FX3' && next === 1) next = 0; // skip ND
+        if (activeCamera === 'FX3' && next === 1) next = 0; 
         if (next >= 0) setActiveOSDIndex(next);
       } else if (e.key === 'ArrowRight') {
         let next = activeOSDIndex + 1;
-        if (activeCamera === 'FX3' && next === 1) next = 2; // skip ND
+        if (activeCamera === 'FX3' && next === 1) next = 2; 
         if (next <= maxIdx) setActiveOSDIndex(next);
       } else if (e.key === 'ArrowUp') {
         setExposure(prev => {
           const nextExp = { ...prev };
-          if (activeOSDIndex === 0) { // Aperture
+          if (activeOSDIndex === 0) { 
             const i = fstopSteps.indexOf(prev.aperture);
-            if (i > 0) nextExp.aperture = fstopSteps[i - 1]; // Up means opening aperture (lower number)
-          } else if (activeOSDIndex === 1 && activeCamera === 'FX9') { // ND
+            if (i > 0) nextExp.aperture = fstopSteps[i - 1]; 
+          } else if (activeOSDIndex === 1 && activeCamera === 'FX9') { 
             const i = ndStepsFX9.indexOf(prev.nd);
-            if (i < ndStepsFX9.length - 1) nextExp.nd = ndStepsFX9[i + 1]; // Up means more ND
-          } else if (activeOSDIndex === 2) { // ISO
+            if (i < ndStepsFX9.length - 1) nextExp.nd = ndStepsFX9[i + 1]; 
+          } else if (activeOSDIndex === 2) { 
             const i = isoSteps.indexOf(prev.iso);
             if (i < isoSteps.length - 1) nextExp.iso = isoSteps[i + 1];
-          } else if (activeOSDIndex === 3) { // Temp
+          } else if (activeOSDIndex === 3) { 
             const i = tempSteps.indexOf(prev.temp);
             if (i < tempSteps.length - 1) nextExp.temp = tempSteps[i + 1];
           }
@@ -214,16 +250,16 @@ function App() {
       } else if (e.key === 'ArrowDown') {
         setExposure(prev => {
           const nextExp = { ...prev };
-          if (activeOSDIndex === 0) { // Aperture
+          if (activeOSDIndex === 0) { 
             const i = fstopSteps.indexOf(prev.aperture);
-            if (i < fstopSteps.length - 1) nextExp.aperture = fstopSteps[i + 1]; // Down means stopping down (higher number)
-          } else if (activeOSDIndex === 1 && activeCamera === 'FX9') { // ND
+            if (i < fstopSteps.length - 1) nextExp.aperture = fstopSteps[i + 1]; 
+          } else if (activeOSDIndex === 1 && activeCamera === 'FX9') { 
             const i = ndStepsFX9.indexOf(prev.nd);
-            if (i > 0) nextExp.nd = ndStepsFX9[i - 1]; // Down means less ND
-          } else if (activeOSDIndex === 2) { // ISO
+            if (i > 0) nextExp.nd = ndStepsFX9[i - 1]; 
+          } else if (activeOSDIndex === 2) { 
             const i = isoSteps.indexOf(prev.iso);
             if (i > 0) nextExp.iso = isoSteps[i - 1];
-          } else if (activeOSDIndex === 3) { // Temp
+          } else if (activeOSDIndex === 3) { 
             const i = tempSteps.indexOf(prev.temp);
             if (i > 0) nextExp.temp = tempSteps[i - 1];
           }
@@ -246,6 +282,7 @@ function App() {
           activeCamera={activeCamera} 
           exposure={exposure} 
           activeOSDIndex={!menuOpen ? activeOSDIndex : -1} 
+          globalValues={globalValues}
         />
       )}
 
@@ -274,15 +311,14 @@ function App() {
       ) : (
         <>
           {menuOpen && activeCamera === 'FX3' && (
-            <FX3Menu onClose={() => setMenuOpen(false)} globalValues={globalValues} setGlobalValues={setGlobalValues} />
+            <FX3Menu onClose={() => setMenuOpen(false)} values={globalValues} setValues={setGlobalValues} />
           )}
           {menuOpen && activeCamera === 'FX9' && (
-            <FX9Menu onClose={() => setMenuOpen(false)} globalValues={globalValues} setGlobalValues={setGlobalValues} />
+            <FX9Menu onClose={() => setMenuOpen(false)} values={globalValues} setValues={setGlobalValues} />
           )}
         </>
       )}
 
-      {/* Global Instructions Overlay */}
       <div className="instructions">
         {activeCamera === null ? (
           <>Select a camera to start</>

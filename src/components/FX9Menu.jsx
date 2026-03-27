@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { fx9Menu } from '../data/fx9Menu';
 
-export default function FX9Menu({ onClose }) {
+export default function FX9Menu({ onClose, values, setValues }) {
   const [activeCol, setActiveCol] = useState(1); // 1: Sidebar, 2: Items
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   
@@ -10,7 +10,6 @@ export default function FX9Menu({ onClose }) {
   
   const [editMode, setEditMode] = useState(false);
   const [tempValue, setTempValue] = useState(null);
-  const [values, setValues] = useState({});
 
   const dropdownListRef = useRef(null);
 

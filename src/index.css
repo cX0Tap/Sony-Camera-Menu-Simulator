@@ -173,3 +173,44 @@ kbd { background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 4px; 
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
 ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+
+/* -------------------------------------
+   VIEWFINDER MARKERS CONFIG 
+-------------------------------------- */
+.marker-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 5;
+}
+
+/* 1. Guideframes (Rule of Thirds) */
+.marker-guide { position: absolute; background: rgba(255, 255, 255, 0.4); }
+.marker-guide.v-left { top: 0; bottom: 0; left: 33.33%; width: 1px; }
+.marker-guide.v-right { top: 0; bottom: 0; left: 66.66%; width: 1px; }
+.marker-guide.h-top { left: 0; right: 0; top: 33.33%; height: 1px; }
+.marker-guide.h-bottom { left: 0; right: 0; top: 66.66%; height: 1px; }
+
+/* 2. Safety Zones */
+.marker-safety { position: absolute; border: 1px solid rgba(255, 255, 255, 0.5); }
+.marker-safety.s-80 { top: 10%; bottom: 10%; left: 10%; right: 10%; }
+.marker-safety.s-90 { top: 5%; bottom: 5%; left: 5%; right: 5%; }
+
+/* 3. Center Marker */
+.marker-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+}
+.mc-horiz, .mc-vert { position: absolute; background: rgba(255, 255, 255, 0.8); }
+.mc-horiz { width: 30px; height: 1px; left: -15px; top: 0; }
+.mc-vert { width: 1px; height: 30px; top: -15px; left: 0; }
+
+/* 4. Aspect Ratio Markers */
+.marker-aspect {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.5); height: 100%;
+}
+.marker-aspect.a-43 { aspect-ratio: 4/3; }
+.marker-aspect.a-139 { aspect-ratio: 13/9; }
+.marker-aspect.a-149 { aspect-ratio: 14/9; }
+.marker-aspect.a-159 { aspect-ratio: 15/9; }
+.marker-aspect.a-1661 { aspect-ratio: 1.66/1; }
+.marker-aspect.a-1851 { aspect-ratio: 1.85/1; }
+.marker-aspect.a-2351 { aspect-ratio: 2.35/1; }

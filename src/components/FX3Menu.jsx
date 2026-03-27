@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { fx3Menu } from '../data/fx3Menu';
 
-export default function FX3Menu({ onClose }) {
+export default function FX3Menu({ onClose, values, setValues }) {
   const [activeCol, setActiveCol] = useState(1);
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedSub, setSelectedSub] = useState(0);
@@ -11,7 +11,6 @@ export default function FX3Menu({ onClose }) {
   
   const [editMode, setEditMode] = useState(false);
   const [tempValue, setTempValue] = useState(null);
-  const [values, setValues] = useState({});
 
   const dropdownListRef = useRef(null);
 
